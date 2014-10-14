@@ -19,11 +19,11 @@
 
 % \newsavebox\draftbox
 % \savebox\draftbox{\tikz[color=red,opacity=0.25]\node{DRAFT};}
-% 
+
 % \newsavebox\datebox
 % \savebox\datebox{\tikz[color=red,opacity=0.25]\node{\today};}
-% 
-% 
+
+
 % \newwatermark*[
 %   allpages,
 %   angle=52.31,
@@ -31,7 +31,7 @@
 %   xpos=-35,
 %   ypos=40
 % ]{\usebox\draftbox\\[-30pt] \usebox\datebox}
-% 
+
 
 \definecolor{codegreen}{rgb}{0,0.6,0}
 \definecolor{codegray}{rgb}{0.5,0.5,0.5}
@@ -112,23 +112,6 @@ G(x,y) =  f(x,y,\lambda) \otimes tr(\lambda)
 Simulating slitless observations can therefore be simulated starting from a set of direct images, providing information about the field and the objects in that field, and sufficient understanding of the properties of the dispersing element.
 All of the current code we describe below currently rely on a set of direct observations of the field, or at least a catalog of objects, complete with their size and brightness. 
 
-\section{Use of Simulations}
-Currently, we are aware of simulations of grism observations to have been used for the following purpose:
-
-1) To obtain accurate count rate estimates for faint sources and hence serve as a realistic ETC
-The WFC3 Exposure Time Calculator supports the G102 and G141 grism modes but does so in an approximate manner. Users have found in the past that to account for the signal dillusion that occurs with different object morphologies, a full 2D simulation is preferred. 
-
-2) To estimate the amount of contamination in extracted spectra
-Contamination is a important problem to solve with slitless spectroscopy. The lack of slits results in every source in the field producing spectra (more than one since multiple orders are present). Packages such as \texttt{aXe} uses simulations to estimate this contamination. The quality of this estimate is ultimately limited by the amount of information that is available for every single source in the field (e.g. their location, morphology and spectral characteristics). Simulations have hence been an intrinsic part of the extraction and calibration process from the beginning, although the process has been in large part hidden from users.
-
-3) To examine contamination for a given position angle on the sky 
-The amount of contamination affecting  the spectrum of a source is determined by the brightness, location and spectra characteristics of neighboring sources
-
-4) To directly fit models to 2D spectra to estimate redshift and other galaxy stellar population models
-
-
-
-
 
 \section{Code description}
 
@@ -178,18 +161,58 @@ The other approach, Pixel Based, consists of each pixel individually. Each pixel
 \end{figure}
 
 % N. Pirzkal
+\section{Use of Simulations}
+Currently, we are aware of simulations of grism observations to have been used for the following purpose:
+
+\begin{enumerate}
+\item To obtain accurate count rate estimates for faint sources and hence serve as a realistic ETC
+The WFC3 Exposure Time Calculator supports the G102 and G141 grism modes but does so in an approximate manner. Users have found in the past that to account for the signal delusion that occurs with different object morphologies, a full 2D simulation is preferred. 
+
+\item To estimate the amount of contamination in extracted spectra
+Contamination is a important problem to solve with slitless spectroscopy. The lack of slits results in every source in the field producing spectra (more than one since multiple orders are present). Packages such as \texttt{aXe} uses simulations to estimate this contamination. The quality of this estimate is ultimately limited by the amount of information that is available for every single source in the field (e.g. their location, morphology and spectral characteristics). Simulations have hence been an intrinsic part of the extraction and calibration process from the beginning, although the process has been in large part hidden from users.
+
+\item To examine contamination for a given position angle on the sky 
+The amount of contamination affecting  the spectrum of a source is determined by the brightness, location and spectra characteristics of neighboring sources {\em and} by the orientation of the field since spectra are dispersed in a specific direction (int he case of WFC3, roughly aligned with the x-axis).
+
+\item To directly fit models to 2D spectra to estimate redshift and other galaxy stellar population models
+As computers have become faster it has become more attractive to fit models to dispersed spectra directly. This removes the need to extract and calibrate spectra (which is akin to a de-convolution process) when trying to estimates quantities such as spectro-photometric (using both broadband and spectral information) redshfits. This requires simulation code which is significantly different than code used to extract and calibrate spectra.
+
+\end{enumerate}
+
+
+% N. Pirzkal
 \subsection{``\texttt{aXe}/\texttt{aXeSIM}/\texttt{NPSpec}''} \label{sec:npspec}
 The extraction package \texttt{aXe} contains all the code required to generate accurate simulations of a field. \texttt{aXe}, by design, is a end-to-end solution to spectral extraction and calibration. 
 \texttt{aXe} was developed by N. Pirzkal at ST-ECF (Space Telescope European Coordinating Facility) in 2001 specifically to extract and calibrate ACS sitless spectra (WFC, HRC, grism and prims). It was further improved at ST-ECF by M. K\"{u}mmel until it was formally handed to STScI/OED  when ST-ECF was shut down. aXe was designed to be a generalized, pipeline-able packaged written in C that followed on the footsteps of \texttt{NICMOSlook} and \texttt{CALNIC-C}, developed by W. Freudling. Many of the features found in \texttt{aXe} were based on lessons learned from \texttt{NICMOSlook}.
 As such, its input are high level products, such as Astrodrizzled mosaics of the field and \texttt{SExtractor} catalogs. The results it produces are equally high level and are 2D and 1D extracted and calibrated spectra. The \texttt{aXe} package is meant to be run as a black-box and the user has little to no control on the low level operations \texttt{aXe} performs and there are only a limited number of ways the \texttt{aXe} operations can be customized with our without the addition of custom code. The \texttt{aXe} process is expected to be essentially hands-off and to take a significant amount of time (ten of minutes to hours).  \texttt{aXeSIM}, based on \texttt{aXe}'s internals, is based on the same principle. \texttt{aXeSIM}, using its Objects Based approach, offers a comprehensive approach to generate dispersed simulations of an entire field, with thousands of objects if necessary. Its running time is therefore long. \texttt{aXeSIM} was not designed to generate single object simulations quickly and is therefore less than optimal to do this.
 The Objects Based approach was also implemented in pure Python code, \texttt{NPSpec}. This implementation was created with the specific task of 2D in-situ fitting of stellar model spectra (e.g. Bruzual and Charlot models) to an observed spectrum in an \textit{HST} pipeline calibrated FLT file. The main goal was to create a small kernel of Python code that could create reasonable 2D simulation of a spectrum that could then be compared to the observation and used as part as a larger Markov Chain Monte Carlo approach. The code followed the same approach as \texttt{aXe} and produced similar results, using either stamp images and direct convolution or gaussian kernels and FFT convolution. This prototype showed that a pure Python approach could easily generate a simulated spectrum in approximately 30 ms, when using FFT and gaussian kernels.
 
+Input products needed by \texttt{aXe} and \texttt{aXeSIM} and the products they produce. The following list is meant to be illustrative:
 
-\begin{itemize}
-\item aXeSIM example
-\item Description of needed inputs
-\item Sample code?
-\end{itemize}
+\begin{description}
+\item[Input] \hfill \\
+Mosaic(s) of field, assembled using Astrodrizzle\\
+SExtractor catalog\\
+SExtractor segmentation map [optional]\\
+\texttt{aXe} configuration file of the G102 or G141 WFC3 grism.
+\item[Output] \hfill \\
+2D stamp images of each spectra stored as a multiple extension FITS file.\\
+1D calibrated spectra, each stored as a table in a multiple extension FITS file. Contains wavelength, counts, flux, and contamination information.
+\item[Running Time] \hfill \\
+Several minutes to several tens of minutes for a field containing several thousands of source. 
+\end{description}
+
+\centerline{Input products needed by \texttt{NPSpec}}
+\begin{description}
+\item[Input] \hfill \\
+Mosaic(s) of field, assembled using Astrodrizzle\\
+SExtractor catalog\\
+SExtractor segmentation map [optional]\\
+\texttt{aXe} configuration file of the G102 or G141 WFC3 grism.
+\item[Output] \hfill \\
+2D numerical array containing the expected count rate per pixel for the simulated spectrum
+
+\end{description}
 
 %G. Brammer
 \subsection{``\texttt{threedhst}''}
@@ -334,9 +357,10 @@ can be very slow).
 \section{Code to compute the spectral trace}\label{sec:examplecode}
 %\lstlistoflistings
 %\newpage
-We provide the Python code below to demonstrate reading the \texttt{aXe}-formatted configuration files and computing the spatially-dependent dispersion parameters DYDX and DLDP (\S\ref{sec:axeconf}).
-
-\vspace{1cm}
+We provide the Python code below to demonstrate reading the \texttt{aXe}-formatted configuration files and computing the spatially-dependent dispersion parameters DYDX and DLDP (\S\ref{sec:axeconf}).  Updates to the code (and updates to this document itself) can be found at: 
+\begin{center}
+\url{https://github.com/WFC3Grism/CodeDescription/}.
+\end{center}
 
 \lstinputlisting[language=Python]{grism.py}
 
