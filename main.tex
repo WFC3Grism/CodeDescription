@@ -1,8 +1,4 @@
 \documentclass[preprint]{aastex}
-%\usepackage{draftwatermark}
-%\usepackage[printwatermark]{xwatermark}
-\usepackage{xcolor,tikz}
-
 \usepackage{hyperref}
 \usepackage{breqn}
 \usepackage{listings}
@@ -10,27 +6,30 @@
 \usepackage[utf8]{inputenc}
 
 
-%\SetWatermarkFontSize{5cm}
-%\SetWatermarkColor{red}
-%\SetWatermarkText{DRAFT \today}
-%\newwatermark*[allpages,color=red!50,angle=45,scale=3,xpos=0,ypos=0]{{\Huge DRAFT}\\ {\normalsize \today}}
-
-
-
+%%% GBB cute but chokes my pdflatex and the GitHub version
+% Stuff for neato watermark.
+% \usepackage[printwatermark]{xwatermark}
+% \usepackage{xcolor,tikz}
 % \newsavebox\draftbox
-% \savebox\draftbox{\tikz[color=red,opacity=0.25]\node{DRAFT};}
-
+% \savebox\draftbox{\tikz[color=red,opacity=0.1]\node{DRAFT};}
 % \newsavebox\datebox
-% \savebox\datebox{\tikz[color=red,opacity=0.25]\node{\today};}
-
-
+% \savebox\datebox{\tikz[color=red,opacity=0.1]\node{\today};}
 % \newwatermark*[
 %   allpages,
-%   angle=52.31,
+%   angle=52.31,    % = arctan(11./8.5)
 %   scale=6,
 %   xpos=-35,
 %   ypos=40
 % ]{\usebox\draftbox\\[-30pt] \usebox\datebox}
+
+\usepackage{fancyhdr}
+\usepackage[us,12hr]{datetime} % `us' makes \today behave as usual in TeX/LaTeX
+\fancypagestyle{plain}{
+\fancyhf{}
+\rhead{{\it Draft compiled on {\ddmmyyyydate\today} at \currenttime}}
+\cfoot{-- \thepage\ --}
+\renewcommand{\headrulewidth}{0pt}}
+\pagestyle{plain}
 
 
 \definecolor{codegreen}{rgb}{0,0.6,0}
@@ -69,20 +68,12 @@
 
 \begin{abstract}
     
-    We describe three independently-developed software packages for reducing and analyzing slitless spectroscopic data from the Hubble Space Telescope.  The first, \texttt{aXe}, was developed by the ST-ECF for ACS and later adapter for use with NICMOS and WFC3 data,  and is officially supported by STScI for the user community.  The other two packages were developed for personal use by N. Pirzkal and by G. Brammer.  In this document we describe and compare the capabilities, key assumptions, outputs and runtime of the three separate software packages, which define the current state-of-the art for the analysis of space-based slitless spectroscopic data.
-    
-% RER: I notice none of the examples discuss contamination or show overlapping dispersions.  
-%      Why is this?  Not to air the dirty laundry?  Maybe could we add one section at the very 
-%      end with a title like: "Improvements for the Next Generation" or something. And, there
-%      show figures for overlaps and other problems?  (Ok, Fig 3 shows a very faint overlap, but
-%      I would wager most casual readers won't notice this.)
-
-    
-    
+    We describe three independently-developed software packages for reducing and analyzing slitless spectroscopic data from the Hubble Space Telescope.  The first, \texttt{aXe}, was developed by the ST-ECF for ACS and later adapted for use with NICMOS and WFC3 data,  and is officially supported by STScI for the user community.  The other two packages were developed for personal use by N. Pirzkal and by G. Brammer.  In this document we describe and compare the capabilities, key assumptions, outputs and runtime of the three separate software packages, which define the current state-of-the art for the analysis of space-based slitless spectroscopic data.
     
 \end{abstract}
 
-\textit{Draft version: \today}
+\textit{Draft version: \today}\footnote{For updates to this document, see
+\url{https://github.com/WFC3Grism/CodeDescription/}}.
 
 % N. Pirzkal, R. E. Ryan
 \section{Grism data}
@@ -165,17 +156,18 @@ The other approach, Pixel Based, consists of each pixel individually. Each pixel
 Currently, we are aware of simulations of grism observations to have been used for the following purpose:
 
 \begin{enumerate}
-\item To obtain accurate count rate estimates for faint sources and hence serve as a realistic ETC
-The WFC3 Exposure Time Calculator supports the G102 and G141 grism modes but does so in an approximate manner. Users have found in the past that to account for the signal delusion that occurs with different object morphologies, a full 2D simulation is preferred. 
+\item {\bf To obtain accurate count rate estimates for faint sources and hence serve as a realistic ETC}
+The WFC3 Exposure Time Calculator supports the G102 and G141 grism modes but does so in an approximate manner. Users have found in the past that to account for the signal dilution that occurs with different object morphologies, a full 2D simulation is preferred. 
 
-\item To estimate the amount of contamination in extracted spectra
-Contamination is a important problem to solve with slitless spectroscopy. The lack of slits results in every source in the field producing spectra (more than one since multiple orders are present). Packages such as \texttt{aXe} uses simulations to estimate this contamination. The quality of this estimate is ultimately limited by the amount of information that is available for every single source in the field (e.g. their location, morphology and spectral characteristics). Simulations have hence been an intrinsic part of the extraction and calibration process from the beginning, although the process has been in large part hidden from users.
 
-\item To examine contamination for a given position angle on the sky 
-The amount of contamination affecting  the spectrum of a source is determined by the brightness, location and spectra characteristics of neighboring sources {\em and} by the orientation of the field since spectra are dispersed in a specific direction (int he case of WFC3, roughly aligned with the x-axis).
+\item {\bf To estimate the amount of contamination in extracted spectra}
+Contamination of overlapping dispersions (from neighboring objects) is a important problem to solve with slitless spectroscopy. The lack of slits results in every source in the field producing spectra (more than one since multiple orders are present). Packages, such as \texttt{aXe}, use simulations to estimate this contamination. The quality of this estimate is ultimately limited by the amount of information that is available for every single source in the field (e.g. their location, morphology and spectral characteristics). Simulations have hence been an intrinsic part of the extraction and calibration process from the beginning, although the process has been in large part hidden from users.
 
-\item To directly fit models to 2D spectra to estimate redshift and other galaxy stellar population models
-As computers have become faster it has become more attractive to fit models to dispersed spectra directly. This removes the need to extract and calibrate spectra (which is akin to a de-convolution process) when trying to estimates quantities such as spectro-photometric (using both broadband and spectral information) redshfits. This requires simulation code which is significantly different than code used to extract and calibrate spectra.
+\item {\bf To examine contamination for a given position angle on the sky}
+The amount of contamination affecting  the spectrum of a source is determined by the brightness, location and spectra characteristics of neighboring sources {\em and} by the orientation of the field since spectra are dispersed in a specific direction (in the case of WFC3, roughly aligned with the $x$-axis).
+
+\item {\bf To directly fit models to 2D spectra to estimate redshift and other galaxy stellar population models}
+As computers have become faster it has become more attractive to fit models to dispersed spectra directly. This removes the need to extract and calibrate spectra (which is akin to a de-convolution process) when estimating quantities such as spectro-photometric redshifts (using both broadband and spectral information). This requires simulation code which is significantly different than code used to extract and calibrate spectra.
 
 \end{enumerate}
 
@@ -187,59 +179,88 @@ The extraction package \texttt{aXe} contains all the code required to generate a
 As such, its input are high level products, such as Astrodrizzled mosaics of the field and \texttt{SExtractor} catalogs. The results it produces are equally high level and are 2D and 1D extracted and calibrated spectra. The \texttt{aXe} package is meant to be run as a black-box and the user has little to no control on the low level operations \texttt{aXe} performs and there are only a limited number of ways the \texttt{aXe} operations can be customized with our without the addition of custom code. The \texttt{aXe} process is expected to be essentially hands-off and to take a significant amount of time (ten of minutes to hours).  \texttt{aXeSIM}, based on \texttt{aXe}'s internals, is based on the same principle. \texttt{aXeSIM}, using its Objects Based approach, offers a comprehensive approach to generate dispersed simulations of an entire field, with thousands of objects if necessary. Its running time is therefore long. \texttt{aXeSIM} was not designed to generate single object simulations quickly and is therefore less than optimal to do this.
 The Objects Based approach was also implemented in pure Python code, \texttt{NPSpec}. This implementation was created with the specific task of 2D in-situ fitting of stellar model spectra (e.g. Bruzual and Charlot models) to an observed spectrum in an \textit{HST} pipeline calibrated FLT file. The main goal was to create a small kernel of Python code that could create reasonable 2D simulation of a spectrum that could then be compared to the observation and used as part as a larger Markov Chain Monte Carlo approach. The code followed the same approach as \texttt{aXe} and produced similar results, using either stamp images and direct convolution or gaussian kernels and FFT convolution. This prototype showed that a pure Python approach could easily generate a simulated spectrum in approximately 30 ms, when using FFT and gaussian kernels.
 
-Input products needed by \texttt{aXe} and \texttt{aXeSIM} and the products they produce. The following list is meant to be illustrative:
+Input products needed by \texttt{aXe} and \texttt{aXeSIM} and the products they produce. The following list is meant to be illustrative. Altough \texttt{aXe} and \texttt{aXeSIM} are meant to be high level packages, a significant amount of work is required to assemble some of the needed data product. Broadband mosaics of the field need to be created, SExtractor catalogs need to be generated and merged into a master catalog, ``stamp'' images need to be created if anything more complex than simple gaussian morphologies are required:
 
-\begin{description}
-\item[Input] \hfill \\
-Mosaic(s) of field, assembled using Astrodrizzle\\
-SExtractor catalog\\
-SExtractor segmentation map [optional]\\
-\texttt{aXe} configuration file of the G102 or G141 WFC3 grism.
-\item[Output] \hfill \\
-2D stamp images of each spectra stored as a multiple extension FITS file.\\
-1D calibrated spectra, each stored as a table in a multiple extension FITS file. Contains wavelength, counts, flux, and contamination information.
-\item[Running Time] \hfill \\
-Several minutes to several tens of minutes for a field containing several thousands of source. 
-\end{description}
+\noindent\hfil\rule{0.5\textwidth}{.4pt}\hfil
+
+\centerline{Input products needed by \texttt{aXeSIM}}
+\noindent \textbf{Inputs}
+\begin{itemize}
+\item SExtractor catalog with multiple broad-band magnitudes
+\item Optional:``Stamp'' image (broad band images and segmentation footprint) for each object to simulate 
+\item \texttt{aXe} configuration file of the G102 or G141 WFC3 grism.
+\end{itemize}
+\noindent \textbf{Output}
+\begin{itemize}
+\item 2D fits file containing the simulated image of the entire field, in units of counts/s
+\item Optional: Extracted 2D/1D spectra for objects down to a magnitude limit in the direct images.
+\end{itemize}
+
+\noindent \textbf{Running time}
+\begin{itemize}
+\item Approximately 0.05 second per object and spectral order. A field containing 3168 objects and a total of 8662 spectral order takes approximately 8 minutes to simulate (not including the time required to generate stamp images)
+\item An aXe extraction doubles this time per object for a simple extraction.
+\end{itemize}
+
+\noindent\hfil\rule{0.5\textwidth}{.4pt}\hfil
 
 \centerline{Input products needed by \texttt{NPSpec}}
-\begin{description}
-\item[Input] \hfill \\
-Mosaic(s) of field, assembled using Astrodrizzle\\
-SExtractor catalog\\
-SExtractor segmentation map [optional]\\
-\texttt{aXe} configuration file of the G102 or G141 WFC3 grism.
-\item[Output] \hfill \\
-2D numerical array containing the expected count rate per pixel for the simulated spectrum
-
-\end{description}
+\noindent \textbf{Inputs}
+\begin{itemize}
+\item Broad-band magnitudes for the source to simulate\\
+``Stamp'' image of the object (broad band images and segmentation footprint) to simulate [optional]\\
+\item \texttt{aXe} configuration file of the G102 or G141 WFC3 grism.
+\end{itemize}
+\noindent \textbf{Outputs}
+\begin{itemize}
+\item 2D numeric Python array containing the expected count rate per pixel for the simulated spectrum.
+\end{itemize}
+\noindent \textbf{Running Time}
+\begin{itemize}
+\item A single simulated spectrum requires approximately 0.03 seconds.
+\end{itemize}
 
 %G. Brammer
 \subsection{``\texttt{threedhst}''}
 
-G. Brammer developed a pipeline independent of \texttt{aXe} (but relies on the \texttt{aXe} configuration files)  to process the WFC3/IR G141 spectra obtained by the 3D-HST treasury program (GO 12177 \& 12328; PI: van Dokkum; see Brammer et~al. 2012).  At the heart of this pipeline, dubbed \texttt{threedhst}, is the ``Pixel-Based'' approach demonstrated in Fig.~\ref{sim:2} with the spatial template taken from either the direct imaging itself or, optionally, an aligned reference image (for example, a deeper wide-field mosaic).  In practice, the pipeline presently assumes pixels grouped within a segmentation region of a particular object share a common spectrum, so in some sense it is a hybrid of the two methods described above.  However, it should be straightforward (i.e., additional bookkeeping) to extend the algorithm for an arbitrary separation of independent spatial components (e.g., a bulge and a disk of a distant galaxy).
-
-% RER: Note on the previous paragraph.  This is how I'm framing the problem too.  But, I think you 
-%      might add just a simple line of butt-cover regarding this decision.  At first blush, this 
-%      seems like a restrictive assumption, but I don't think that's true (you experts might disagree).
-%      It would be trivial to carve up a segmentation region with some logic.  Maybe the logic is 
-%      astrophysical and you carve based on morphology (such as bulge, arms, etc.) or it's 
-%      "computational" and you carve based on pixels (like say a 3x3 regridding or Voronoi tesselations).
-%      I know the code likely doesn't do this already, but it would seem to be a small preprocessing 
-%      module that cuts up a segmentation map and adds appropriate entries in a catalog.
-
+G. Brammer developed a pipeline independent of \texttt{aXe} (but that relies on the \texttt{aXe} configuration files)  to process the WFC3/IR G141 spectra obtained by the 3D-HST treasury program (GO 12177 \& 12328; PI: van Dokkum; see Brammer et~al. 2012).  At the heart of this pipeline, dubbed \texttt{threedhst}, is the ``Pixel-Based'' approach demonstrated in Fig.~\ref{sim:2} with the spatial template taken from either the direct imaging itself or, optionally, an aligned reference image (for example, a deeper wide-field mosaic).  In practice, the pipeline presently assumes pixels grouped within a segmentation region of a particular object share a common spectrum, so in some sense it is a hybrid of the two methods described above.  However, it should be straightforward (i.e., additional bookkeeping) to extend the algorithm for an arbitrary separation of independent spatial components (e.g., a bulge and a disk of a distant galaxy).
 
 
 The \texttt{threedhst} pipeline has been designed for speed and flexibility in generating model two-dimensional grism spectra generated from arbitrary input spectra, for example, a galaxy continuum plus emission line template.  The model spectra can then be compared directly to the observed 2D grism spectra, and fits can be evaluated based on the individual pixel uncertainties as defined by the instrument noise model and unaffected by the correlated noise that results from drizzling.  The computation of a model 2D WFC3/G141 spectrum from a higher-resolution input template takes $\sim$3.5 ms for a (NY, NX) = (16, 143) spectral cutout (2$^{\prime\prime}$ along the $y$ spatial axis).  The pipeline includes an automated redshift fitting algorithm that can account for additional redshift constraints from broad-band photometry of a given object.  The algorithm, which evaluates galaxy continuum plus emission-line template fits computed on a high-resolution redshift grid takes $\sim$10 s per object, with the runtime depending on the number of spectral templates and the size of the thumbnail used as the spatial kernel.  We have recently explored implementing the Object-Based model-generation method in the \texttt{threedhst} pipeline, finding substantial speed improvement in generating the model spectra:  models for the (16,143) spectral cutout can be generated in just 0.2 ms.  These models are essentially indistinguishable from those computed with the Pixel-Based approach, given that both methods assume that all pixels within the spatial kernel share the same spectrum.  
+
+\noindent\hfil\rule{0.5\textwidth}{.4pt}\hfil
+
+\centerline{Input/output products for \texttt{threedhst}}
+\noindent \textbf{Inputs}
+\begin{itemize}
+\item  FLT images from the direct and grism exposures.  The FLT images are WCS-aligned and background-subtracted before they are used for modelling and extracting the grism spectra.
+\item SExtractor catalog and segmentagion image [Optional.  If not provided, will be generated directly from the FLT images.]
+\item \texttt{aXe} configuration file of the G102 or G141 WFC3 grism.
+\item Optional: aligned deep image that can be used as the spatial reference in place of the the short direct image exposures
+\item Optional: photometric catalogs with constraints on galaxy redshifts
+\end{itemize}
+\textbf{Outputs}
+\begin{itemize}
+\item 2D FITS file containing the simulated image of the entire field, in units of electrons/s.  The simulated image is used as the contamination model for individual object spectra that are extracted from the field.
+\item Optional: Extracted 2D/1D spectra for objects down to a magnitude limit in the direct image.
+\item Optional: Fits to redshifts and emission line strengths of individual objects.
+\end{itemize}
+\textbf{Running time} \\
+The following run times were computed for a test case running a full 2D model of a single G141 pointing and extracting and fitting a single object in that pointing.  Note that these calculations assume fitting on the native WFC3 pixel grid.  Each visit of the 3D-HST survey (and other similar programs) obtains 4 dithered exposures in a $2\times2$ box pattern that samples the WFC3 pixel at half-pixel intervals.  Fits for the 3D-HST survey involve interlacing the direct images to a $2\times2$ grid so the run times can be $\sim$4 times longer than the numbers reported here (analogous to fitting four exposures simultaneously).
+\begin{itemize}
+\item Generate a full 2D model for a test pointing with 500 objects at $H_{140} < 26.5$ \dotfill 106 s
+\item Extract 2D+1D spectra of a single object \dotfill\ 0.4 s
+\item Fit the object redshift on a redshift grid \dotfill\ 9.2 s
+\item Monte-Carlo fit for the emission line strengths \dotfill\ 6.4 s
+\end{itemize}
 
 \section{Example comparison}
 
 We have run the three grism analysis pipelines on a common dataset to facilitate comparison between them.  The comparison dataset, IBHM52\footnote{\url{http://archive.stsci.edu/hst/search.php?action=Search&sci_data_set_name=IBHM52*}}, is taken from the 3D-HST program (GO 13238).  This visit contains four dithered direct image exposures in the F140W filter (203 s) each followed by a single G141 exposure (1103 s) taken at the same position without moving the telescope.  The pointing lies within the larger COSMOS field imaged in a variety of ACS and WFC3 bands.  Using the larger image mosaics of the COSMOS, all three codes can be used to model the grism spectra of objects near the edges of the field of view whose direct images fall off of the F140W imaging of the visit itself.
     
-    Examples of two-dimensional spectra of stars and galaxies as modeled with the different codes are shown in Figs.\ref{fig:star2D} and \ref{fig:gal2D} below.  The top two panels show the observed direct and grism images.  Note that the direct image has been shifted for the display; the position of the direct image in the FLT frame is $\sim$40 pixels to the left of the start of the G141 1st order spectrum.  The subsequent panels show residuals computed with the \texttt{aXeSIM} and \texttt{threedhst} pipelines.  With \texttt{aXeSIM}, we compute models for both Gaussian spatial profiles (``gauss'') and for spatial profiles as extracted from the direct image itself within a segmentation region around an object (``seg'').  The spectral shape is also modeled in two ways with \texttt{aXeSIM}, the first assuming a flat $f_\lambda$ spectrum with the normalization determined from the F140W direct image, and the second (``All'') with a continuum shape determined from the additional ancillary imaging available in this field (WFC3/IR F125W, F140W, and F160W).  The \texttt{threedhst} model uses the segmentation-based approach and refines the spectral shape based on the observed spectrum itself.  \textit{The segmentation-based approach is clearly preferable to assuming Gaussian object profiles}, and even more so for point sources.  
+    Examples of two-dimensional spectra of stars and galaxies as modeled with the different codes are shown in Figs.\ref{fig:star2D} and \ref{fig:gal2D} below.  The top two panels show the observed direct and grism images.  Note that the direct image has been shifted for the display; the position of the direct image in the FLT frame is $\sim$40 pixels to the left of the start of the G141 1st order spectrum.  The subsequent panels show residuals computed with the \texttt{aXeSIM} and \texttt{threedhst} pipelines.  With \texttt{aXeSIM}, we compute models for both Gaussian spatial profiles (``gauss'') and for spatial profiles as extracted from the direct image itself within a segmentation region around an object (``seg'').  The spectral shape is also modeled in two ways with \texttt{aXeSIM}, the first assuming a flat $f_\lambda$ spectrum with the normalization determined from the F140W direct image, and the second (``All'') with a continuum shape determined from the additional ancillary imaging available in this field (WFC3/IR F125W, F140W, and F160W).  The \texttt{threedhst} model uses a segmentation-based approach like \texttt{aXe} but can additionally refine the spectral shape based on the observed spectrum itself.  \textit{The segmentation-based approach is clearly preferable to assuming Gaussian object profiles}, and even more so for point sources.  
     
-    
-    
+
 \begin{figure}
     \epsscale{1.0}
     \plotone{Figures/compare_model_star.pdf}
@@ -260,6 +281,7 @@ We have run the three grism analysis pipelines on a common dataset to facilitate
 %      would be the easiest thing to get right --- high S/N, TRULY a single spectrum per source, 
 %      and well-known spatial profile.  But maybe the steepness of the profile *IS* the problem? 
 %      Where if you're off just 1% it's like this: (S - 0.01*S)/N = still large ?
+% GBB: yes, the residuals are larger for the point source because PSF effects are more important (the modelling codes typicall assume a constant PSF, say, F140W).
 
 
 
@@ -268,22 +290,6 @@ We have run the three grism analysis pipelines on a common dataset to facilitate
 
 A key limitation to the methods presented above is dealing with deblending (or contamination) of overlapping dispersions and optimally combining information from multiple orientations or positions.  
 While \texttt{aXe} uses the same engine as \texttt{aXeSIM} to quantitatively estimates the amount of spectral contamination, this information is not used to deblend, or clean, calibrated spectra. This information is instead provided solely as a quantitative estimate. At present, the WFC3 Grism Group is exploring two different (but related) methods based on their computational feasibility, fundamental assumptions, and limiting systematics.  The first method ({\it forward modeling}) essentially seeks to predict a given dispersed image based on the properties of the sources (such as number/position of sources and their spectra).  These properties are optimized by comparing with the observed dispersed image, but typically the positions are held fixed (to those seen in the direct image).  The second method ({\it linear reconstruction}) attempts to reconstruct the optimal spectra by inversion using least-squares techniques.  We feel each approach has unique pros and cons, and neither seems to inherently superior at this stage.  We have just begun developing prototypes of these tools which are not necessarily built using previously discussed pipelines or configurations, indeed we leave open the possibility that new calibrations, reference files, or descriptions of the grism images will be needed for these tools.  
-
-% RER: I'm reluctant to give timelines and prefer not to (unless asked to do so).  In all honesty, I 
-%      I think I'll be fully simulating images in week or so, inverting the problem in a month or so,  
-%      reducing simulated data in 2-3 months, and tackling real data in <~6 months.  But I'd prefer to 
-%      keep that a secret until I'm a bit more confident of that timeline.  
-%
-%      As for a pure forward model, I think I could divert my attention and have something in 1-2 month.
-%      I'm not sure what your guys timeline is.
-%
-%      Yes, I'm working in IDL still.  I assure you that's temporary.  John asked me to get something 
-%      sooner than later, so once he knows I've got something working I'll translate it to python
-%      (with your help, of course ;) ).  I speak python at a 5th grade level, so I really don't see 
-%      it as too bad --- FWIW I've already identified places where IDL is bad for this and python will 
-%      be better.
-
-
 
 
 \newpage
@@ -327,7 +333,6 @@ where we have explicitly expressed $dy$ as a function of the source position ($i
 
 
 The description of the wavelength dependence {\em along} the trace DLDP is similar and parametrizes the difference in wavelength between the reference point on the trace and a given position on the trace.
-
 \begin{dmath}\label{eqn:lam}
 \lambda = \alpha_0 + \alpha_1 \cdot dp + \alpha_2 \cdot dp^2 + ... + \alpha_n \cdot dp^n \label{eq:4}
 \end{dmath}
@@ -337,17 +342,17 @@ where again, a 2D field dependence implies
 \end{dmath}
 and we have, in the case of a linear wavelength dispersion solution,
 \begin{dmath}
-d\lambda(i,j,dp) = \beta_{0,0} + \beta_{0,1} \cdot i + \beta_{0,2} \cdot j + \beta_{0,3} \cdot i^2 + \beta_{0,4} \cdot i \cdot j + \beta_{0,5} \cdot j^2 + dp~(\beta_{1,0} + \beta_{1,1} \cdot i + \beta_{1,2} \cdot j + \beta_{1,3} \cdot i^2 + \beta_{1,4} \cdot i \cdot j + \beta_{1,5} \cdot j^2) \label{eq:6}
+\lambda(i,j,dp) = \beta_{0,0} + \beta_{0,1} \cdot i + \beta_{0,2} \cdot j + \beta_{0,3} \cdot i^2 + \beta_{0,4} \cdot i \cdot j + \beta_{0,5} \cdot j^2 + dp~(\beta_{1,0} + \beta_{1,1} \cdot i + \beta_{1,2} \cdot j + \beta_{1,3} \cdot i^2 + \beta_{1,4} \cdot i \cdot j + \beta_{1,5} \cdot j^2) \label{eq:6}
 \end{dmath}
 
-The aXe configuration file encodes the $b_{n,m}$\ parameters of Equation \ref{eq:3} (describing the trace) in DYDX and the $\beta_{m,m}$\ parameters of Equation \ref{eq:6} (describing the wavelength dispersion) in DLDP.  To be precise, $dp$ in the preceeding equations is the arclength along the trace, given as:
+The aXe configuration file encodes the $b_{n,m}$\ parameters of Equation \ref{eq:3} (describing the trace) in DYDX and the $\beta_{n,m}$\ parameters of Equation \ref{eq:6} (describing the wavelength dispersion) in DLDP.  To be precise, $dp$ in the preceeding equations is the arclength along the trace, given as:
 
 \begin{dmath}
 dp(X) = \int_{0}^{X} \sqrt{1+y'(x)^2}\, dx
 \label{eq:dldp}
 \end{dmath}
-where $y'(x) = dy/dx$.  For $n\leq2$, this integral has an analytic solution, which we 
-utilize in the example code below.  For higher orders, we evaluate this integral numerically (which 
+where $y'(x) = dy/dx$.  For $n\leq2$, this integral has analytic solutions, which we 
+utilize in the example code below.  For higher order $dy/dx$ trace shapes, such as the curved orders of the WFC3/UVIS G280 grism, we evaluate this integral numerically (which 
 can be very slow).
 
 
