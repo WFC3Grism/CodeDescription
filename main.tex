@@ -61,14 +61,13 @@
 
 \begin{document}
 
-\title{Current \textit{HST} Slitless Spectroscopy Analysis Software}
+\title{Current \textit{HST} Slitless Spectroscopy Simulation Software}
 
 % Note: This document is from the WFC3 team, specifically from the people workign on grism in WFC3.
 \author{STScI WFC3 Grism Group \\ (Members: G. Brammer, N. Pirzkal, R. E. Ryan)}
 
 \begin{abstract}
-    
-    We describe three independently-developed software packages for reducing and analyzing slitless spectroscopic data from the Hubble Space Telescope.  The first, \texttt{aXe}, was developed by the ST-ECF for ACS and later adapted for use with NICMOS and WFC3 data,  and is officially supported by STScI for the user community.  The other two packages were developed for personal use by N. Pirzkal and by G. Brammer.  In this document we describe and compare the capabilities, key assumptions, outputs and runtime of the three separate software packages, which define the current state-of-the art for the analysis of space-based slitless spectroscopic data.
+    We describe the properties of three independently-developed software packages when used to simulate slitless spectroscopic data from the Hubble Space Telescope.  The first, \texttt{aXe}/\texttt{aXeSIM}, was developed by the ST-ECF for ACS and later adapted for use with NICMOS and WFC3 data,  and is officially supported by STScI for the user community.  The other two packages were developed for personal use by N. Pirzkal and by G. Brammer.  In this document we describe and compare the capabilities, key assumptions, outputs and runtime of the three separate software packages, which define the current state-of-the art for the analysis of space-based slitless spectroscopic data.
     
 \end{abstract}
 
@@ -103,10 +102,21 @@ G(x,y) =  f(x,y,\lambda) \otimes tr(\lambda)
 Simulating slitless observations can therefore be simulated starting from a set of direct images, providing information about the field and the objects in that field, and sufficient understanding of the properties of the dispersing element.
 All of the current code we describe below currently rely on a set of direct observations of the field, or at least a catalog of objects, complete with their size and brightness. 
 
+\section{Contamination}
+Contamination is a drawback of slitless spectroscopy. First, the lack of slits also results in the subtle effect that the effective resolution of the disperser is lowered by the size of the footprint of the objects in the dispersion direction. Hence, a larger object will produce a spectrum that is smoothed out. This is visible in Figure \ref{fig:1} where we show that the leftmost and rightmost pixels of the source, shown on the left of the Figure, are projected onto the same sets of pixels on the right hand side of the Figure. This self contamination depends on the direction of the dispersion and orientation of the source. A non symmetrical source will therefore produce spectra of different effective resolution at different position angles on the sky. Second, different objects can contaminate one another and this is again very sensitive on the orientation at which the data were obtained/simulated. Figure \ref{fig:2} illustrates this by showing three distinct sources, shown in blue, red and green, dispersed at three different positions angles. At some orientations, some spectrum remains uncontaminated (i.e. green object in panels 1 and 2) while it is strongly contaminated at some other orientation (i.e. green object in panel 3). As shown in this Figure, keeping track of the contamination levels require a careful book keeping of the objects' location, their shape/footprint as well as their spectral characteristics.
+
+\begin{figure}[!ht]
+\centering
+\includegraphics[width=5.5in]{"Figures/contam_sim"}
+\caption{A simplified view of the complex relation between object morphologies, spatial distribution and spectral contamination when slitless observations are made at different position angles. In each panel, three direct objects with different morphologies are shown on the left (blue, green and red) and their respective spectrum are shown dispersed on the right. The middle panel shows the dispersion when the field is rotated 180 degrees with respect to the top panel while the bottom panel shows the result of a 90 degree rotation.}
+\label{fig:2}
+\end{figure}
+
+
 
 \section{Code description}
 
-There are currently three different simulation codes being used within the WFC3 Grism Group:  \texttt{aXe}/ \texttt{aXeSIM}, \texttt{threedhst}, and \texttt{NPSpec}. All three use the same WFC3 calibration products that describe the dispersion and sensitivity of the WFC3 grisms. \texttt{aXe}/\texttt{aXeSIM} can handle grism and prism (e.g. highly non-linear wavelength dispersion). \texttt{aXe}/\texttt{aXeSIM} are both available to the users. \texttt{threedhst}, which is Python based, was developed by the 3D-HST team and is publicly available but not supported at STScI. \texttt{NPSpec} is a Python implementation of simulation kernel that allows one to perform quick simulations for the purpose of SED fitting. The latter is not directly available to the user and was used to gain experience with direct 2D SED fitting of observed spectra.
+There are currently three different simulation codes being used within the WFC3 Grism Group:  \texttt{aXe}/\texttt{aXeSIM}, \texttt{threedhst}, and \texttt{NPSpec}. All three use the same WFC3 calibration products that describe the dispersion and sensitivity of the WFC3 grisms. \texttt{aXe}/\texttt{aXeSIM} can handle grism and prism (e.g. highly non-linear wavelength dispersion). \texttt{aXe}/\texttt{aXeSIM} are both available to the users. \texttt{threedhst}, which is Python based, was developed by the 3D-HST team and is publicly available but not supported at STScI. \texttt{NPSpec} is a Python implementation of simulation kernel that allows one to perform quick simulations for the purpose of SED fitting. The latter is not directly available to the user and was used to gain experience with direct 2D SED fitting of observed spectra.
 
 The three codes described described in this document share common configuration files (e.g. \texttt{aXe} Configuration Files) that define how a given pixel in the direct image is dispersed by the various grism orders (the ``trace''), both geometrically (the location of the trace on the image) and spectro-photometrically (the intensity of the spectrum in electrons per second per pixel). 
 
@@ -135,21 +145,21 @@ Figure \ref{sim:1} illustrates this method. Currently, \texttt{aXe}/\texttt{aXeS
 
 \begin{figure}[!t]
 \centering
-\includegraphics[width=7.5in]{"Figures/object_sim"}
+\includegraphics[width=\textwidth]{"Figures/object_sim"}
 \caption{This example shows the process (Panels 1 through 4) of Object Based simulation, whereby the footprint of the object, shown on the left, is convolved with the spectral trace.}
 \label{sim:1}
+\end{figure}
+
+\begin{figure}[!t]
+\centering
+\includegraphics[width=\textwidth]{"Figures/pixel_sim"}
+\caption{This example shows the process (Panels 1 through 4) of Pixel Based simulation, whereby individual pixels, shown on the left, are convolved with the spectral trace.}
+\label{sim:2}
 \end{figure}
 
 \subsubsection{Pixel based}
 
 The other approach, Pixel Based, consists of each pixel individually. Each pixel is treated as a separate entity and the trace and wavelength relation is obtained and mapped onto the simulated image. This allows for individual pixels to have different colors/spectra as a different spectrum can be assigned to each object. 
-
-\begin{figure}[!ht]
-\centering
-\includegraphics[width=7.5in]{"Figures/pixel_sim"}
-\caption{This example shows the process (Panels 1 through 4) of Pixel Based simulation, whereby individual pixels, shown on the left, are convolved with the spectral trace.}
-\label{sim:2}
-\end{figure}
 
 % N. Pirzkal
 \section{Use of Simulations}
@@ -161,7 +171,7 @@ The WFC3 Exposure Time Calculator supports the G102 and G141 grism modes but doe
 
 
 \item {\bf To estimate the amount of contamination in extracted spectra}
-Contamination of overlapping dispersions (from neighboring objects) is a important problem to solve with slitless spectroscopy. The lack of slits results in every source in the field producing spectra (more than one since multiple orders are present). Packages, such as \texttt{aXe}, use simulations to estimate this contamination. The quality of this estimate is ultimately limited by the amount of information that is available for every single source in the field (e.g. their location, morphology and spectral characteristics). Simulations have hence been an intrinsic part of the extraction and calibration process from the beginning, although the process has been in large part hidden from users.
+Contamination of overlapping spectra from neighboring objects is an important problem to solve with slitless spectroscopy. The lack of slits results in every source in the field producing spectra (more than one since multiple orders are present). Packages, such as \texttt{aXe}, use simulations to estimate this contamination. The quality of this estimate is ultimately limited by the amount of information that is available for every single source in the field (e.g. their location, morphology and spectral characteristics). Simulations have hence been an intrinsic part of the extraction and calibration process from the beginning, although the process has been in large part hidden from users.
 
 \item {\bf To examine contamination for a given position angle on the sky}
 The amount of contamination affecting  the spectrum of a source is determined by the brightness, location and spectra characteristics of neighboring sources {\em and} by the orientation of the field since spectra are dispersed in a specific direction (in the case of WFC3, roughly aligned with the $x$-axis).
@@ -262,7 +272,7 @@ We have run the three grism analysis pipelines on a common dataset to facilitate
     
 
 \begin{figure}
-    \epsscale{1.0}
+    %\epsscale{1.0}
     \plotone{Figures/compare_model_star.pdf}
     \caption{2D spectrum of a star.  The top panel shows the F140W image offset to put the object at the center of the panel.  The second panel shows the observed G141 spectrum.  The red outline shows the subset of pixels used in the distribution of residuals shown in the lower right panel.  The bottom five 2D spectrum panels show the $observed-model$ residuals for the modeling codes and input assumptions, as labeled.  The top right panel shows the spatial profile of the 2D spectrum collapsed along the $x$ (wavelength) axis for the observed (filled gray) and model (colored lines) spectra.}
     \label{fig:star2D}
