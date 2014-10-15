@@ -197,7 +197,7 @@ The geometric parameters that define the trace relative to a reference pixel in 
 
 \noindent These parameters are stored in the configuration files as polynomials whose coefficients can vary in both $x$ and $y$ dimensions across the instrumental field of view.  \textit{The polynomials are defined in the nominal distorted frame of the \textit{HST} science instruments} (i.e., FLT images produced by the ACS and WFC3 calibration pipelines). A more complete description of these polynomials is presented in Appendix \ref{sec:axeconf}.
 
-The flux calibration of the spectral orders is defined in separate sensitivity files with the sensitivity and its corresponding uncertainty in units of $f_\lambda$ ($\mathrm{erg/s/cm^2/\AA}$) provided as a function of wavelength.  Though the grism dispersion can vary across the instrumental field of view, the sensitivity curve is currently assumed to be constant across the ACS fields. In WFC3, the variation of the sensitivity across the field of view is corrected by the grism-specific flat-field calibration files.
+The flux calibration of the spectral orders is defined in separate sensitivity files with the sensitivity and its corresponding uncertainty in units of $f_\lambda$ (${\rm erg/s/cm^2/\AA}$) provided as a function of wavelength.  Though the grism dispersion can vary across the instrumental field of view, the sensitivity curve is currently assumed to be constant across the ACS fields. In WFC3, the variation of the sensitivity across the field of view is corrected by the grism-specific flat-field calibration files.
 
 % N. Pirzkal
 \ssubsection{Two approaches of the existing software}
@@ -419,12 +419,12 @@ can be very slow).
 \ssection{Code to compute the spectral trace}\label{sec:examplecode}
 %\lstlistoflistings
 %\newpage
-We provide the Python code below to demonstrate reading the \texttt{aXe}-formatted configuration files and computing the spatially-dependent dispersion parameters DYDX and DLDP (\S\ref{sec:axeconf}).  Updates to the code (and updates to this document itself) can be found at: 
+We provide the Python code below (\href{https://github.com/WFC3Grism/CodeDescription/blob/master/axe_disperse.py}{\texttt{axe_disperse.py}}) to demonstrate reading the \texttt{aXe}-formatted configuration files and computing the spatially-dependent dispersion parameters DYDX and DLDP (\S\ref{sec:axeconf}).  Updates to the code (and updates to this document itself) can be found at: 
 \begin{center}
 \url{https://github.com/WFC3Grism/CodeDescription/}.
 \end{center}
 
-\lstinputlisting[language=Python]{grism.py}
+\lstinputlisting[language=Python]{axe_disperse.py}
 
 
 
